@@ -18,6 +18,25 @@ catalog**, so always discover capabilities at runtime rather than assuming them.
 This file doubles as a Claude Code skill (the YAML frontmatter above) and a
 Cursor rule (point Cursor at it, or copy into `.cursor/rules/datavessel.mdc`).
 
+## Install
+
+The CLI is published on npm. If `datavessel` is not on PATH (commands fail with
+`command not found` / exit code 127), install it once:
+
+```bash
+npm i -g datavessel-cli   # installs the `datavessel` and `dv` commands; needs Node >= 20
+```
+
+Then verify:
+
+```bash
+datavessel --version
+```
+
+If a global install isn't possible (no permissions, no global npm), fall back to
+`npx datavessel-cli <args>` — but prefer the global install so subsequent calls
+are fast.
+
 ## Golden rules for agents
 
 1. **Discover, don't guess.** List/inspect tools before calling them; tool names
@@ -35,6 +54,9 @@ Cursor rule (point Cursor at it, or copy into `.cursor/rules/datavessel.mdc`).
 ## Core workflow
 
 ```bash
+# 0. Ensure the CLI is installed (skip if `datavessel --version` works)
+command -v datavessel >/dev/null || npm i -g datavessel-cli
+
 # 1. Confirm who we are (exit 3 => not logged in)
 datavessel --json whoami
 
@@ -83,6 +105,7 @@ Flags are derived from each tool's JSON Schema:
 | 3 | not authenticated | ask user to run `datavessel login` |
 | 4 | quota exceeded | stop; tell user to upgrade/wait |
 | 5 | provider not connected | ask user to connect the source |
+| 127 | `datavessel` not found | install it: `npm i -g datavessel-cli` (see Install) |
 | 1 | other error | read stderr; surface to user |
 
 ## Don'ts
