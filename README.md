@@ -8,31 +8,41 @@ Shopify, WooCommerce, Shopware, …) from your terminal.
 catalog.** It fetches `/v1/tools/schemas` and turns each tool's JSON Schema into
 flags, help text, and validation — so when a tool is added or changed on the
 backend, the CLI picks it up automatically with no release. This mirrors how the
-[datavessel MCP server](../) already syncs its tools.
-
-> Status: builds, type-checks, lints, and is unit-tested (40 tests) against the
-> documented backend contracts. Browser login + token refresh are verified
-> end-to-end against a mock auth server; the real browser leg depends on the
-> `/cli-auth` page shipped in `datavessel-frontend`. The default API/app URLs
-> (`https://api.datavessel.io`, `https://app.datavessel.io`) are configurable
-> (see below) — confirm them for your environment.
+[datavessel MCP server](https://github.com/djr4/datavessel-mcp-public) already
+syncs its tools.
 
 ## Install
 
 ```bash
-# from this directory
+npm install -g datavessel-cli
+```
+
+This puts two commands on your PATH — `datavessel` and the short alias `dv`.
+Requires Node.js ≥ 20.11.
+
+The CLI defaults to the hosted backend (`https://api.datavessel.io`) and web app
+(`https://app.datavessel.io`); both are configurable (see
+[Configuration](#configuration)) if you run datavessel elsewhere.
+
+<details>
+<summary>From source (development)</summary>
+
+```bash
+git clone https://github.com/djr4/datavessel-cli.git
+cd datavessel-cli
 npm install
 npm run build
-npm link        # exposes `datavessel` and `dv` on your PATH
+npm link                 # exposes `datavessel` and `dv` on your PATH
 
-# or run without building, during development
+# or run without building
 npm run dev -- tools list
 ```
+</details>
 
 ## Quick start
 
 ```bash
-datavessel login                          # paste an access token (or --token)
+datavessel login                          # sign in via your browser
 datavessel tools list                     # browse the catalog
 datavessel tools show run_report          # see a tool's parameters
 datavessel run run_report --property-id 123 --metrics sessions --metrics users
