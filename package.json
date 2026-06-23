@@ -1,0 +1,57 @@
+{
+  "name": "datavessel-cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for datavessel: 100+ read/write tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware). Commands and help are generated dynamically from the backend tool catalog.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "datavessel",
+  "homepage": "https://datavessel.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/djr4/datavessel-cli.git"
+  },
+  "keywords": [
+    "datavessel",
+    "cli",
+    "ga4",
+    "google-analytics",
+    "search-console",
+    "shopify",
+    "mcp"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "bin": {
+    "datavessel": "dist/index.js",
+    "dv": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "tsx --test test/*.test.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.20.0"
+  }
+}
