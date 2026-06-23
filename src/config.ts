@@ -20,15 +20,40 @@ import { join } from 'node:path';
 /** Production backend API base. Override per-profile or with DATAVESSEL_API_URL. */
 export const DEFAULT_BASE_URL = 'https://api.datavessel.io';
 
-export type AuthType = 'bearer' | 'api-key';
+/** Web app base, used for the browser login handoff. Override with DATAVESSEL_APP_URL. */
+export const DEFAULT_APP_URL = 'https://app.datavessel.io';
 
-export interface Credential {
-  type: AuthType;
+export type AuthType = 'bearer' | 'api-key' | 'oauth';
+
+export interface BearerCredential {
+  type: 'bearer';
   token: string;
 }
 
+export interface ApiKeyCredential {
+  type: 'api-key';
+  token: string;
+}
+
+/**
+ * A Supabase session obtained via the browser login flow. `expiresAt` is epoch
+ * seconds; `supabaseUrl`/`anonKey` (both public) let the CLI refresh the
+ * short-lived access token on its own without re-prompting.
+ */
+export interface OAuthCredential {
+  type: 'oauth';
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  supabaseUrl: string;
+  anonKey: string;
+}
+
+export type Credential = BearerCredential | ApiKeyCredential | OAuthCredential;
+
 interface ProfileConfig {
   baseUrl?: string;
+  appUrl?: string;
 }
 
 interface ConfigFile {
@@ -41,6 +66,7 @@ type CredentialsFile = Record<string, Credential>;
 export interface ResolvedConfig {
   profile: string;
   baseUrl: string;
+  appUrl: string;
   credential?: Credential;
 }
 
@@ -117,8 +143,12 @@ export function resolveConfig(flagProfile?: string): ResolvedConfig {
     process.env.DATAVESSEL_API_URL ||
     cfg.profiles?.[profile]?.baseUrl ||
     DEFAULT_BASE_URL;
+  const appUrl =
+    process.env.DATAVESSEL_APP_URL ||
+    cfg.profiles?.[profile]?.appUrl ||
+    DEFAULT_APP_URL;
 
-  let credential = readCredentials()[profile];
+  let credential: Credential | undefined = readCredentials()[profile];
   // Env tokens win so CI can inject auth without touching disk.
   if (process.env.DATAVESSEL_TOKEN) {
     credential = { type: 'bearer', token: process.env.DATAVESSEL_TOKEN };
@@ -126,7 +156,7 @@ export function resolveConfig(flagProfile?: string): ResolvedConfig {
     credential = { type: 'api-key', token: process.env.DATAVESSEL_API_KEY };
   }
 
-  return { profile, baseUrl, credential };
+  return { profile, baseUrl, appUrl, credential };
 }
 
 export function setBaseUrl(profile: string, baseUrl: string): void {
@@ -134,6 +164,14 @@ export function setBaseUrl(profile: string, baseUrl: string): void {
   cfg.profiles ??= {};
   cfg.profiles[profile] ??= {};
   cfg.profiles[profile].baseUrl = baseUrl;
+  writeConfig(cfg);
+}
+
+export function setAppUrl(profile: string, appUrl: string): void {
+  const cfg = readConfig();
+  cfg.profiles ??= {};
+  cfg.profiles[profile] ??= {};
+  cfg.profiles[profile].appUrl = appUrl;
   writeConfig(cfg);
 }
 

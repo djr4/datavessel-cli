@@ -1,11 +1,10 @@
 /**
  * Authentication commands: login, logout, whoami.
  *
- * The execute endpoint authenticates with a Bearer JWT (issued by the
- * datavessel auth server / web app) or a session cookie; API keys are accepted
- * by API-key endpoints. `login` stores a token for the active profile after
- * verifying it against `/v1/auth/me`. Tokens can also be supplied per-command
- * via `--token` or the `DATAVESSEL_TOKEN` / `DATAVESSEL_API_KEY` env vars.
+ * `login` defaults to a browser handoff that yields a refreshable Supabase
+ * session (see oauth.ts), then verifies it against `/v1/auth/me`. For CI a
+ * static credential can be supplied via `--token` / `--api-key` or the
+ * `DATAVESSEL_TOKEN` / `DATAVESSEL_API_KEY` env vars.
  */
 
 import { Command } from 'commander';
@@ -13,47 +12,38 @@ import { buildContext, globalOpts } from '../context.js';
 import { ApiClient } from '../api.js';
 import {
   clearCredential,
+  resolveConfig,
   resolveProfileName,
   saveCredential,
-  type AuthType,
   type Credential,
 } from '../config.js';
-import { CliError, ExitCode } from '../errors.js';
-import { isInteractive, promptSecret } from '../prompt.js';
+import { loginViaBrowser } from '../oauth.js';
 import { printJson, success, info, c } from '../output.js';
 
 export function registerAuthCommands(program: Command): void {
   program
     .command('login')
-    .description('Authenticate by storing an access token for the active profile')
-    .option('--token <jwt>', 'Bearer access token (JWT) from the datavessel web app')
-    .option('--api-key <key>', 'API key (for API-key endpoints) instead of a Bearer token')
-    .option('--no-verify', 'Skip verifying the token against the backend')
+    .description('Sign in via your browser (or pass --token / --api-key for CI)')
+    .option('--token <jwt>', 'Use a Bearer access token instead of the browser flow')
+    .option('--api-key <key>', 'Use an API key instead of the browser flow')
+    .option('--no-browser', "Print the login URL instead of opening a browser")
+    .option('--no-verify', 'Skip verifying the credential against the backend')
     .action(async (opts, cmd: Command) => {
       const global = globalOpts(cmd);
       const profile = resolveProfileName(global.profile);
+      const resolved = resolveConfig(global.profile);
 
-      let credential: Credential | undefined;
+      let credential: Credential;
       if (opts.apiKey) {
         credential = { type: 'api-key', token: String(opts.apiKey) };
       } else if (opts.token) {
         credential = { type: 'bearer', token: String(opts.token) };
       } else {
-        if (!isInteractive()) {
-          throw new CliError(
-            'No token provided and not running interactively.',
-            ExitCode.USAGE,
-            'Pass --token <jwt>, or set DATAVESSEL_TOKEN. Get a token from https://app.datavessel.io',
-          );
-        }
-        info(
-          `Paste an access token for profile ${c.cyan(profile)}.\n` +
-            `Get one from the datavessel web app (Settings → API): ${c.dim('https://app.datavessel.io')}`,
-        );
-        const type: AuthType = 'bearer';
-        const token = (await promptSecret('Token: ')).trim();
-        if (!token) throw new CliError('No token entered.', ExitCode.USAGE);
-        credential = { type, token };
+        // Default: browser-based OAuth handoff. Yields a refreshable session.
+        credential = await loginViaBrowser({
+          appUrl: global.appUrl || resolved.appUrl,
+          open: opts.browser !== false,
+        });
       }
 
       if (opts.verify !== false) {
@@ -64,7 +54,6 @@ export function registerAuthCommands(program: Command): void {
         success(`Logged in as ${c.bold(me.email)} (profile: ${profile})`);
         return;
       }
-
       saveCredential(profile, credential);
       success(`Saved credential for profile ${c.cyan(profile)} (unverified).`);
     });

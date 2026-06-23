@@ -5,11 +5,12 @@
 
 import { Command } from 'commander';
 import { ApiClient } from './api.js';
-import { resolveConfig, type Credential, type ResolvedConfig } from './config.js';
+import { resolveConfig, saveCredential, type Credential, type ResolvedConfig } from './config.js';
 
 export interface GlobalOptions {
   profile?: string;
   baseUrl?: string;
+  appUrl?: string;
   token?: string;
   apiKey?: string;
   json?: boolean;
@@ -36,10 +37,23 @@ export function buildContext(cmd: Command): Context {
   // Flag overrides take precedence over stored/env config.
   if (global.baseUrl) config.baseUrl = global.baseUrl;
   let credential: Credential | undefined = config.credential;
-  if (global.token) credential = { type: 'bearer', token: global.token };
-  else if (global.apiKey) credential = { type: 'api-key', token: global.apiKey };
+  let fromStore = true;
+  if (global.token) {
+    credential = { type: 'bearer', token: global.token };
+    fromStore = false;
+  } else if (global.apiKey) {
+    credential = { type: 'api-key', token: global.apiKey };
+    fromStore = false;
+  }
   config.credential = credential;
 
-  const client = new ApiClient({ baseUrl: config.baseUrl, credential });
+  // Persist rotated OAuth tokens only when the credential came from disk (not
+  // from an ephemeral --token / env override).
+  const onRefresh =
+    fromStore && credential?.type === 'oauth'
+      ? (c: Credential) => saveCredential(config.profile, c)
+      : undefined;
+
+  const client = new ApiClient({ baseUrl: config.baseUrl, credential, onRefresh });
   return { global, config, client };
 }

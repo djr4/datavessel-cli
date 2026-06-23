@@ -10,10 +10,12 @@ flags, help text, and validation — so when a tool is added or changed on the
 backend, the CLI picks it up automatically with no release. This mirrors how the
 [datavessel MCP server](../) already syncs its tools.
 
-> Status: initial scaffold. It builds, type-checks, lints, and is unit-tested
-> against the documented backend contracts. The default API base URL
-> (`https://api.datavessel.io`) and the login token source should be confirmed
-> against your environment — both are configurable (see below).
+> Status: builds, type-checks, lints, and is unit-tested (40 tests) against the
+> documented backend contracts. Browser login + token refresh are verified
+> end-to-end against a mock auth server; the real browser leg depends on the
+> `/cli-auth` page shipped in `datavessel-frontend`. The default API/app URLs
+> (`https://api.datavessel.io`, `https://app.datavessel.io`) are configurable
+> (see below) — confirm them for your environment.
 
 ## Install
 
@@ -39,22 +41,43 @@ datavessel --json run list_sites          # machine-readable output
 
 ## Authentication
 
-The execute endpoint authenticates with a **Bearer JWT** issued by the
-datavessel web app (or a session cookie); API-key endpoints accept an
-**API key**. Get a token from <https://app.datavessel.io> (Settings → API).
+`datavessel login` opens your browser, signs you in with the normal datavessel
+Google flow, and hands the session back to the CLI over a localhost loopback.
+The backend's authorization server is Supabase; the CLI stores the resulting
+**refresh token** and silently refreshes the short-lived access token, so you
+log in once.
+
+```bash
+datavessel login                 # browser flow (default)
+datavessel login --no-browser    # print the URL instead of opening a browser
+datavessel whoami
+datavessel logout
+```
+
+For CI / headless use, supply a static credential instead of the browser flow:
+
+```bash
+datavessel login --token "$JWT"            # store a Bearer JWT
+DATAVESSEL_TOKEN="$JWT" datavessel whoami   # or pass it per-invocation
+```
 
 Credentials are stored per-profile under `~/.config/datavessel/credentials.json`
 (mode `0600`). Precedence, highest first:
 
 1. `--token` / `--api-key` flags
 2. `DATAVESSEL_TOKEN` / `DATAVESSEL_API_KEY` env vars
-3. stored credential for the active profile
+3. stored credential for the active profile (browser-login session)
 
-```bash
-datavessel login --token "$JWT"           # non-interactive
-DATAVESSEL_TOKEN="$JWT" datavessel whoami  # CI-friendly
-datavessel logout
-```
+> The browser flow requires the `/cli-auth` page in `datavessel-frontend`. It
+> redirects only to `http://127.0.0.1:<port>` (loopback), echoes a random
+> `state` the CLI verifies, and requires an explicit "Authorize" click.
+
+### Use with coding agents (Claude Code / Cursor)
+
+This repo ships [`SKILL.md`](./SKILL.md) — a ready-made agent skill describing
+how to drive the CLI (discover tools, `--json` output, exit codes, auth). Drop
+it into `.claude/skills/datavessel/SKILL.md` for Claude Code, or reference it
+from a Cursor rule.
 
 ## Commands
 
@@ -92,12 +115,13 @@ for confirmation unless `--yes` is passed.
 ```bash
 datavessel config show
 datavessel config set base-url https://api.datavessel.io
+datavessel config set app-url https://app.datavessel.io
 datavessel config set default-profile work
 datavessel --profile staging config set base-url https://staging-api.datavessel.io
 ```
 
-Environment overrides: `DATAVESSEL_API_URL`, `DATAVESSEL_PROFILE`,
-`DATAVESSEL_CONFIG_DIR`, `NO_COLOR`.
+Environment overrides: `DATAVESSEL_API_URL`, `DATAVESSEL_APP_URL`,
+`DATAVESSEL_PROFILE`, `DATAVESSEL_CONFIG_DIR`, `NO_COLOR`.
 
 The tool catalog is cached at `~/.config/datavessel/catalog.json` and refreshed
 when older than 24h, on a base-URL change, or via `datavessel sync`.

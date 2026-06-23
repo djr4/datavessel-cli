@@ -31,6 +31,7 @@ export function buildProgram(): Command {
     .version(version(), '-v, --version', 'Print the CLI version')
     .option('-p, --profile <name>', 'Configuration profile to use')
     .option('--base-url <url>', 'Override the backend API base URL')
+    .option('--app-url <url>', 'Override the web app URL used for browser login')
     .option('--token <jwt>', 'Override the Bearer token for this invocation')
     .option('--api-key <key>', 'Override the API key for this invocation')
     .option('--json', 'Output machine-readable JSON', false)

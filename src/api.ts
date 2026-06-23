@@ -8,6 +8,7 @@
 
 import { CliError, ExitCode, mapBackendError, type BackendError } from './errors.js';
 import type { Credential } from './config.js';
+import { needsRefresh, refreshOAuth } from './session.js';
 
 export interface ToolSchema {
   provider: string;
@@ -23,24 +24,38 @@ export interface ClientOptions {
   baseUrl: string;
   credential?: Credential;
   timeoutMs?: number;
+  /** Called when an OAuth credential is refreshed, so callers can persist it. */
+  onRefresh?: (credential: Credential) => void;
 }
 
 export class ApiClient {
   readonly baseUrl: string;
-  private readonly credential?: Credential;
+  private credential?: Credential;
   private readonly timeoutMs: number;
+  private readonly onRefresh?: (credential: Credential) => void;
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
     this.credential = opts.credential;
     this.timeoutMs = opts.timeoutMs ?? 60_000;
+    this.onRefresh = opts.onRefresh;
   }
 
-  private authHeaders(): Record<string, string> {
-    if (!this.credential) return {};
-    return this.credential.type === 'api-key'
-      ? { 'X-API-Key': this.credential.token }
-      : { Authorization: `Bearer ${this.credential.token}` };
+  /**
+   * Build auth headers, transparently refreshing an expired OAuth access token
+   * first and persisting the rotated credential via `onRefresh`.
+   */
+  private async authHeaders(): Promise<Record<string, string>> {
+    let cred = this.credential;
+    if (!cred) return {};
+    if (cred.type === 'oauth' && needsRefresh(cred)) {
+      cred = await refreshOAuth(cred);
+      this.credential = cred;
+      this.onRefresh?.(cred);
+    }
+    if (cred.type === 'api-key') return { 'X-API-Key': cred.token };
+    if (cred.type === 'oauth') return { Authorization: `Bearer ${cred.accessToken}` };
+    return { Authorization: `Bearer ${cred.token}` };
   }
 
   private requireAuth(): void {
@@ -59,6 +74,7 @@ export class ApiClient {
     opts: { body?: unknown; auth?: boolean } = {},
   ): Promise<T> {
     if (opts.auth) this.requireAuth();
+    const authHeaders = opts.auth ? await this.authHeaders() : {};
 
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
@@ -71,7 +87,7 @@ export class ApiClient {
         headers: {
           Accept: 'application/json',
           ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-          ...(opts.auth ? this.authHeaders() : {}),
+          ...authHeaders,
         },
         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
         signal: controller.signal,

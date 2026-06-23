@@ -14,6 +14,7 @@ import {
   listProfiles,
   resolveConfig,
   resolveProfileName,
+  setAppUrl,
   setBaseUrl,
   setDefaultProfile,
 } from '../config.js';
@@ -32,6 +33,7 @@ export function registerConfigCommands(program: Command): void {
       const data = {
         profile: resolved.profile,
         baseUrl: resolved.baseUrl,
+        appUrl: resolved.appUrl,
         authenticated: Boolean(resolved.credential),
         authType: resolved.credential?.type ?? null,
         configDir: configDir(),
@@ -47,6 +49,7 @@ export function registerConfigCommands(program: Command): void {
           [
             ['profile', data.profile],
             ['base-url', data.baseUrl],
+            ['app-url', data.appUrl],
             ['authenticated', String(data.authenticated)],
             ['auth-type', String(data.authType ?? '-')],
             ['config-dir', data.configDir],
@@ -58,7 +61,7 @@ export function registerConfigCommands(program: Command): void {
 
   config
     .command('get <key>')
-    .description("Get a config value. Keys: base-url, default-profile")
+    .description('Get a config value. Keys: base-url, app-url, default-profile')
     .action((key: string, _opts, cmd: Command) => {
       const global = globalOpts(cmd);
       const resolved = resolveConfig(global.profile);
@@ -66,17 +69,24 @@ export function registerConfigCommands(program: Command): void {
         case 'base-url':
           info(resolved.baseUrl);
           break;
+        case 'app-url':
+          info(resolved.appUrl);
+          break;
         case 'default-profile':
           info(resolveProfileName());
           break;
         default:
-          throw new CliError(`Unknown config key: ${key}`, ExitCode.USAGE, 'Keys: base-url, default-profile');
+          throw new CliError(
+            `Unknown config key: ${key}`,
+            ExitCode.USAGE,
+            'Keys: base-url, app-url, default-profile',
+          );
       }
     });
 
   config
     .command('set <key> <value>')
-    .description('Set a config value. Keys: base-url, default-profile')
+    .description('Set a config value. Keys: base-url, app-url, default-profile')
     .action((key: string, value: string, _opts, cmd: Command) => {
       const global = globalOpts(cmd);
       const profile = resolveProfileName(global.profile);
@@ -85,12 +95,20 @@ export function registerConfigCommands(program: Command): void {
           setBaseUrl(profile, value);
           success(`Set base-url for profile ${c.cyan(profile)} to ${value}`);
           break;
+        case 'app-url':
+          setAppUrl(profile, value);
+          success(`Set app-url for profile ${c.cyan(profile)} to ${value}`);
+          break;
         case 'default-profile':
           setDefaultProfile(value);
           success(`Default profile set to ${c.cyan(value)}`);
           break;
         default:
-          throw new CliError(`Unknown config key: ${key}`, ExitCode.USAGE, 'Keys: base-url, default-profile');
+          throw new CliError(
+            `Unknown config key: ${key}`,
+            ExitCode.USAGE,
+            'Keys: base-url, app-url, default-profile',
+          );
       }
     });
 
