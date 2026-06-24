@@ -71,6 +71,43 @@ datavessel --json tools show run_report
 datavessel --json run run_report --property-id 123 --metrics sessions --metrics users --limit 10
 ```
 
+## Gathering data in parallel (subagents)
+
+When a task needs data from **several independent sources** — e.g. GA4 sessions
+*and* Search Console clicks *and* Shopify orders for the same period — fan the
+work out across parallel subagents instead of running the calls one after
+another in your own context. Each subagent owns one scoped slice, runs its own
+`discover → show → run` against the CLI, and returns a **distilled summary, not
+the raw JSON**. The bulky tool output stays in the subagent; only the conclusion
+comes back to you. This is both faster (calls overlap) and far cheaper on tokens
+(the orchestrator never sees the raw dumps).
+
+```text
+Orchestrator: "Compare last month's traffic, search, and sales."
+  ├─ subagent A → datavessel --json run run_report …            → "Sessions: 48,210 (+6%)"
+  ├─ subagent B → datavessel --json run query_search_analytics… → "Clicks: 12,034 (+2%)"
+  └─ subagent C → datavessel --json run list_orders …           → "Orders: 1,118 ($92,400)"
+Orchestrator merges the three one-line results.
+```
+
+Rules for fanning out:
+
+1. **Warm auth once, then fan out.** Run a single `datavessel --json whoami`
+   (or any one call) in the orchestrator *before* spawning subagents. The
+   session's access token is short-lived and **the refresh rotates it** — if
+   many `dv` processes refresh at once they stampede and can corrupt the stored
+   session. One warm-up call refreshes the on-disk token so the parallel
+   children all reuse it without refreshing.
+2. **Only parallelize independent reads.** If step B needs step A's output
+   (e.g. list sites → then query each site), keep those sequential; parallelize
+   only across the independent fan-out (e.g. one subagent per site).
+3. **Never parallelize writes.** Write tools (`access: write`) need explicit
+   per-change approval and must run deliberately, one at a time — not fanned out.
+4. **Mind the shared quota.** Parallel calls draw down the same tool-call quota
+   faster. If any subagent hits exit code 4, stop fanning out and surface it.
+5. **Each subagent uses `--json` and returns only what's needed** — a number, a
+   short table, a verdict. Don't pass raw catalog or tool output back up.
+
 ## Passing parameters to `run`
 
 Flags are derived from each tool's JSON Schema:
