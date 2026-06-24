@@ -20,6 +20,19 @@ npm install -g datavessel-cli
 This puts two commands on your PATH — `datavessel` and the short alias `dv`.
 Requires Node.js ≥ 20.11.
 
+### Homebrew (macOS / Linux)
+
+The repo ships a Homebrew formula at [`Formula/datavessel.rb`](./Formula/datavessel.rb):
+
+```bash
+brew install https://raw.githubusercontent.com/djr4/datavessel-cli/main/Formula/datavessel.rb
+```
+
+This installs both `datavessel` and `dv` (Homebrew pulls in `node` as a
+dependency). To upgrade later, re-run the command, or — for the cleaner
+`brew upgrade` workflow — move the formula into a dedicated tap repo named
+`homebrew-tap`, after which users can run `brew install djr4/tap/datavessel`.
+
 The CLI defaults to the hosted backend (`https://api.datavessel.io`) and web app
 (`https://app.datavessel.io`); both are configurable (see
 [Configuration](#configuration)) if you run datavessel elsewhere.
