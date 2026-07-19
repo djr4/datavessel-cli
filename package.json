@@ -1,7 +1,7 @@
 {
   "name": "datavessel-cli",
   "version": "0.1.0",
-  "description": "Command-line interface for datavessel: 100+ read/write tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware). Commands and help are generated dynamically from the backend tool catalog.",
+  "description": "Command-line interface for datavessel: 200+ read/write tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware). Commands and help are generated dynamically from the backend tool catalog.",
   "type": "module",
   "license": "Apache-2.0",
   "author": "datavessel",
