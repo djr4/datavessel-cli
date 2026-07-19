@@ -1,6 +1,6 @@
 # datavessel-cli
 
-Command-line interface for [datavessel](https://datavessel.io) — run 100+
+Command-line interface for [datavessel](https://datavessel.io) — run 200+
 read/write analytics and commerce tools (GA4, Search Console, Google/Meta Ads,
 Shopify, WooCommerce, Shopware, …) from your terminal.
 
