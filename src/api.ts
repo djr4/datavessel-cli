@@ -9,6 +9,7 @@
 import { CliError, ExitCode, mapBackendError, type BackendError } from './errors.js';
 import type { Credential } from './config.js';
 import { needsRefresh, refreshOAuth } from './session.js';
+import { USER_AGENT } from './version.js';
 
 export interface ToolSchema {
   provider: string;
@@ -86,6 +87,8 @@ export class ApiClient {
         method,
         headers: {
           Accept: 'application/json',
+          // Identifies the CLI (vs MCP/web) in backend logs for channel attribution.
+          'User-Agent': USER_AGENT,
           ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
           ...authHeaders,
         },
