@@ -84,10 +84,17 @@ Credentials are stored per-profile under `~/.config/datavessel/credentials.json`
 
 ### Use with coding agents (Claude Code / Cursor)
 
-This repo ships [`SKILL.md`](./SKILL.md) — a ready-made agent skill describing
-how to drive the CLI (discover tools, `--json` output, exit codes, auth). Drop
-it into `.claude/skills/datavessel/SKILL.md` for Claude Code, or reference it
-from a Cursor rule.
+This repo is also an installable **Claude Code plugin** carrying
+[`SKILL.md`](./SKILL.md) — a ready-made agent skill describing how to drive
+the CLI (discover tools, `--json` output, exit codes, auth). In Claude Code:
+
+```
+/plugin marketplace add djr4/datavessel-cli
+/plugin install datavessel@datavessel
+```
+
+For Cursor (or manual setup), reference [`SKILL.md`](./SKILL.md) from a rule
+or copy it into `.claude/skills/datavessel/SKILL.md`.
 
 ## Commands
 
