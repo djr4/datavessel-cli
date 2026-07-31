@@ -1,0 +1,18 @@
+{
+  "name": "datavessel",
+  "owner": {
+    "name": "datavessel",
+    "url": "https://datavessel.io"
+  },
+  "description": "datavessel plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "datavessel",
+      "source": "./",
+      "description": "Discover and run 200+ analytics & commerce tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware) via the datavessel CLI, with safe defaults for write operations.",
+      "license": "Apache-2.0",
+      "homepage": "https://datavessel.io",
+      "keywords": ["analytics", "ecommerce", "ga4", "search-console", "shopify", "woocommerce", "shopware"]
+    }
+  ]
+}

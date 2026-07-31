@@ -2,22 +2,13 @@
  * Assembles the commander program: global options + all subcommands.
  */
 
-import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { registerAuthCommands } from './commands/auth.js';
 import { registerToolsCommands } from './commands/tools.js';
 import { registerRunCommand } from './commands/run.js';
 import { registerAccountCommands } from './commands/account.js';
 import { registerConfigCommands } from './commands/config.js';
-
-function version(): string {
-  try {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-    return pkg.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-}
+import { cliVersion } from './version.js';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -28,7 +19,7 @@ export function buildProgram(): Command {
       'datavessel CLI — run 100+ analytics & commerce tools.\n' +
         'Commands and tool help are generated from the live backend catalog.',
     )
-    .version(version(), '-v, --version', 'Print the CLI version')
+    .version(cliVersion(), '-v, --version', 'Print the CLI version')
     .option('-p, --profile <name>', 'Configuration profile to use')
     .option('--base-url <url>', 'Override the backend API base URL')
     .option('--app-url <url>', 'Override the web app URL used for browser login')
