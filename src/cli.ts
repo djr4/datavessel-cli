@@ -5,6 +5,7 @@
 import { Command } from 'commander';
 import { registerAuthCommands } from './commands/auth.js';
 import { registerInitCommand } from './commands/init.js';
+import { registerSetupCommand } from './commands/setup.js';
 import { registerToolsCommands } from './commands/tools.js';
 import { registerRunCommand } from './commands/run.js';
 import { registerAccountCommands } from './commands/account.js';
@@ -34,6 +35,7 @@ export function buildProgram(): Command {
 
   registerAuthCommands(program);
   registerInitCommand(program);
+  registerSetupCommand(program);
   registerToolsCommands(program);
   registerRunCommand(program);
   registerAccountCommands(program);
@@ -42,6 +44,7 @@ export function buildProgram(): Command {
   program.addHelpText(
     'after',
     '\nQuick start:\n' +
+      '  datavessel setup                 Interactive wizard: sign in, connect, teach your agents\n' +
       '  datavessel init --api-key <key>  Sign in headlessly and self-configure\n' +
       '  datavessel login                 Authenticate (paste a token)\n' +
       '  datavessel tools list            Browse available tools\n' +
