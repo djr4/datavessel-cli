@@ -94,8 +94,14 @@ Credentials are stored per-profile under `~/.config/datavessel/credentials.json`
 
 This repo is also an installable **Claude Code plugin**. It carries:
 
-- [`SKILL.md`](./SKILL.md) — the agent skill describing how to drive the CLI
-  (discover tools, `--json` output, exit codes, auth);
+- [`skills/datavessel`](./skills/datavessel/SKILL.md) — the shared base skill
+  describing how to drive the CLI (discover tools, `--json` output, exit
+  codes, auth);
+- **team skills** — [`operator-team`](./skills/operator-team/SKILL.md),
+  [`marketing-team`](./skills/marketing-team/SKILL.md), and
+  [`builder-team`](./skills/builder-team/SKILL.md): each runs the matching
+  server-side team end to end (brief the lead, dispatch, wait, surface write
+  approvals, present the one report);
 - an **agent hierarchy** in [`agents/`](./agents) — `dv-analytics` and
   `dv-commerce-reader` run reads autonomously (and in parallel),
   `dv-commerce-ops` executes store changes only with per-change human
@@ -112,8 +118,10 @@ This repo is also an installable **Claude Code plugin**. It carries:
 Reads run free; writes ask first. The read agents are structurally limited to
 `access: read` tools, so "autonomous" never means "can refund an order".
 
-For Cursor (or manual setup), reference [`SKILL.md`](./SKILL.md) from a rule
-or copy it into `.claude/skills/datavessel/SKILL.md`.
+For Cursor (or manual setup), reference
+[`skills/datavessel/SKILL.md`](./skills/datavessel/SKILL.md) from a rule or
+copy it into `.claude/skills/datavessel/SKILL.md` (add the team skills the
+same way if you use teams).
 
 ## Commands
 
