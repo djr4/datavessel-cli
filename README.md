@@ -42,6 +42,7 @@ npm run dev -- tools list
 ## Quick start
 
 ```bash
+datavessel setup                          # interactive wizard: sign in, connect, teach your agents
 datavessel login                          # sign in via your browser
 datavessel init                           # verify, sync catalog, report what's ready
 datavessel tools list                     # browse the catalog
@@ -119,6 +120,7 @@ or copy it into `.claude/skills/datavessel/SKILL.md`.
 | Command | Description |
 | --- | --- |
 | `login` / `logout` / `whoami` | Manage and inspect authentication |
+| `setup` | Interactive wizard: sign in, see exactly which sources to connect (with the URL), answer a few questions (GA4 property, Search Console site, store, Slack channel) — saved to team memory so agents and teams start with zero config |
 | `init` | Sign in (optionally `--api-key`/`--token`), sync the catalog, and report providers, tier, and quota in one shot |
 | `tools list` | List tools (filter with `--provider`, `--access`, `--search`) |
 | `tools show <tool>` | Show a tool's description and parameters |
