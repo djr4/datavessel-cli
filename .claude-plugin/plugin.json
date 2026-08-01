@@ -1,6 +1,6 @@
 {
   "name": "datavessel",
-  "description": "Discover and run 200+ analytics & commerce tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware) via the datavessel CLI — with an agent hierarchy: autonomous read agents, a human-in-the-loop write agent, and a verifier, plus /datavessel:setup for one-command onboarding.",
+  "description": "Discover and run 200+ analytics & commerce tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware) via the datavessel CLI — with an agent hierarchy (autonomous readers, approval-gated writer, verifier), team skills that run the Operator/Marketing/Builder teams end to end, and /datavessel:setup for one-command onboarding.",
   "version": "0.3.0",
   "author": {
     "name": "datavessel",
