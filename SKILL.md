@@ -73,6 +73,29 @@ datavessel --json tools show run_report
 datavessel --json run run_report --property-id 123 --metrics sessions --metrics users --limit 10
 ```
 
+## The shipped agent hierarchy (Claude Code plugin)
+
+When this repo is installed as a Claude Code plugin, it ships four
+purpose-built subagents alongside this skill. Prefer delegating to them over
+running everything in your own context — each is scoped, tool-restricted, and
+returns a distilled summary instead of raw JSON:
+
+| Agent | Access | Use for |
+| --- | --- | --- |
+| `dv-analytics` | read-only, autonomous | GA4 / Search Console / Ads questions; safe to fan out in parallel |
+| `dv-commerce-reader` | read-only, autonomous | orders, products, customers, refund history; also *prepares* writes |
+| `dv-commerce-ops` | write, human-in-the-loop | refunds, fulfillments, cancellations, product creation — one at a time, each change explicitly approved by the user |
+| `dv-verifier` | read-only, autonomous | independently confirming a write landed, or double-checking a reported number |
+
+The division of labour: **read agents run free, the write agent asks first,
+the verifier closes the loop.** A typical store change flows
+`dv-commerce-reader` (gather ids/amounts) → `dv-commerce-ops` (approve +
+execute) → `dv-verifier` (confirm it landed).
+
+There is also a `/datavessel:setup` command that installs the CLI, takes a
+key, runs `datavessel init`, and reports what's ready — use it when the CLI
+isn't configured yet.
+
 ## Gathering data in parallel (subagents)
 
 When a task needs data from **several independent sources** — e.g. GA4 sessions
@@ -96,10 +119,10 @@ Rules for fanning out:
 
 1. **Warm auth once, then fan out.** Run a single `datavessel --json whoami`
    (or any one call) in the orchestrator *before* spawning subagents. The
-   session's access token is short-lived and **the refresh rotates it** — if
-   many `dv` processes refresh at once they stampede and can corrupt the stored
-   session. One warm-up call refreshes the on-disk token so the parallel
-   children all reuse it without refreshing.
+   session's access token is short-lived and the refresh rotates it. The CLI
+   serializes refreshes across processes with an on-disk lock (so parallel
+   `dv` calls can no longer corrupt the stored session), but one warm-up call
+   still avoids the children queueing behind a refresh.
 2. **Only parallelize independent reads.** If step B needs step A's output
    (e.g. list sites → then query each site), keep those sequential; parallelize
    only across the independent fan-out (e.g. one subagent per site).

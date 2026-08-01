@@ -9,6 +9,7 @@
 
 import { CliError, ExitCode } from './errors.js';
 import type { OAuthCredential } from './config.js';
+import { withFileLock } from './lock.js';
 
 /** True when the access token is expired or within `skewSec` of expiring. */
 export function needsRefresh(cred: OAuthCredential, skewSec = 60): boolean {
@@ -65,4 +66,36 @@ export async function refreshOAuth(cred: OAuthCredential): Promise<OAuthCredenti
     refreshToken: body.refresh_token ?? cred.refreshToken,
     expiresAt,
   };
+}
+
+export interface LockedRefreshOptions {
+  /** Directory used as the exclusive lock (shared by all dv processes). */
+  lockDir: string;
+  /** Re-read the stored credential after the lock is held. */
+  reload: () => OAuthCredential | undefined;
+  /** Persist the rotated credential before the lock is released. */
+  persist: (cred: OAuthCredential) => void;
+}
+
+/**
+ * Refresh with cross-process single-flight semantics.
+ *
+ * Because Supabase rotates the refresh token, concurrent refreshes from
+ * parallel `dv` processes invalidate each other. Under the lock we re-read the
+ * stored credential first: if a sibling process already refreshed, its rotated
+ * session is simply adopted and no network call is made. Only the process that
+ * finds the stored token still stale actually refreshes, and it persists the
+ * rotation before releasing the lock so every waiter sees it.
+ */
+export async function refreshOAuthLocked(
+  cred: OAuthCredential,
+  opts: LockedRefreshOptions,
+): Promise<OAuthCredential> {
+  return withFileLock(opts.lockDir, async () => {
+    const stored = opts.reload() ?? cred;
+    if (!needsRefresh(stored)) return stored;
+    const next = await refreshOAuth(stored);
+    opts.persist(next);
+    return next;
+  });
 }

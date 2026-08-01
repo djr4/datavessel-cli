@@ -82,6 +82,7 @@ export function configDir(): string {
 const configPath = () => join(configDir(), 'config.json');
 const credentialsPath = () => join(configDir(), 'credentials.json');
 const catalogPath = () => join(configDir(), 'catalog.json');
+const refreshLockDir = () => join(configDir(), 'refresh.lock');
 
 export function ensureDir(): void {
   const dir = configDir();
@@ -181,6 +182,11 @@ export function setDefaultProfile(profile: string): void {
   writeConfig(cfg);
 }
 
+/** Re-read a profile's credential from disk (fresh, not cached). */
+export function getStoredCredential(profile: string): Credential | undefined {
+  return readCredentials()[profile];
+}
+
 export function saveCredential(profile: string, credential: Credential): void {
   const creds = readCredentials();
   creds[profile] = credential;
@@ -201,4 +207,4 @@ export function listProfiles(): string[] {
   return [...new Set(['default', ...fromConfig, ...fromCreds])].sort();
 }
 
-export const _paths = { configPath, credentialsPath, catalogPath };
+export const _paths = { configPath, credentialsPath, catalogPath, refreshLockDir };

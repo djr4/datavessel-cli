@@ -43,10 +43,17 @@ npm run dev -- tools list
 
 ```bash
 datavessel login                          # sign in via your browser
+datavessel init                           # verify, sync catalog, report what's ready
 datavessel tools list                     # browse the catalog
 datavessel tools show run_report          # see a tool's parameters
 datavessel run run_report --property-id 123 --metrics sessions --metrics users
 datavessel --json run list_sites          # machine-readable output
+```
+
+Headless (CI, agents): one command signs in and self-configures —
+
+```bash
+datavessel init --api-key "$DATAVESSEL_API_KEY"
 ```
 
 ## Authentication
@@ -84,14 +91,25 @@ Credentials are stored per-profile under `~/.config/datavessel/credentials.json`
 
 ### Use with coding agents (Claude Code / Cursor)
 
-This repo is also an installable **Claude Code plugin** carrying
-[`SKILL.md`](./SKILL.md) — a ready-made agent skill describing how to drive
-the CLI (discover tools, `--json` output, exit codes, auth). In Claude Code:
+This repo is also an installable **Claude Code plugin**. It carries:
+
+- [`SKILL.md`](./SKILL.md) — the agent skill describing how to drive the CLI
+  (discover tools, `--json` output, exit codes, auth);
+- an **agent hierarchy** in [`agents/`](./agents) — `dv-analytics` and
+  `dv-commerce-reader` run reads autonomously (and in parallel),
+  `dv-commerce-ops` executes store changes only with per-change human
+  approval, and `dv-verifier` independently confirms writes landed;
+- [`/datavessel:setup`](./commands/setup.md) — one command that installs the
+  CLI, takes your key, runs `datavessel init`, and reports what's ready.
 
 ```
 /plugin marketplace add djr4/datavessel-cli
 /plugin install datavessel@datavessel
+/datavessel:setup
 ```
+
+Reads run free; writes ask first. The read agents are structurally limited to
+`access: read` tools, so "autonomous" never means "can refund an order".
 
 For Cursor (or manual setup), reference [`SKILL.md`](./SKILL.md) from a rule
 or copy it into `.claude/skills/datavessel/SKILL.md`.
@@ -101,6 +119,7 @@ or copy it into `.claude/skills/datavessel/SKILL.md`.
 | Command | Description |
 | --- | --- |
 | `login` / `logout` / `whoami` | Manage and inspect authentication |
+| `init` | Sign in (optionally `--api-key`/`--token`), sync the catalog, and report providers, tier, and quota in one shot |
 | `tools list` | List tools (filter with `--provider`, `--access`, `--search`) |
 | `tools show <tool>` | Show a tool's description and parameters |
 | `run <tool> [--flags…]` | Execute a tool; flags come from its schema |

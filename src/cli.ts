@@ -4,6 +4,7 @@
 
 import { Command } from 'commander';
 import { registerAuthCommands } from './commands/auth.js';
+import { registerInitCommand } from './commands/init.js';
 import { registerToolsCommands } from './commands/tools.js';
 import { registerRunCommand } from './commands/run.js';
 import { registerAccountCommands } from './commands/account.js';
@@ -32,6 +33,7 @@ export function buildProgram(): Command {
     .showHelpAfterError('(add --help for usage)');
 
   registerAuthCommands(program);
+  registerInitCommand(program);
   registerToolsCommands(program);
   registerRunCommand(program);
   registerAccountCommands(program);
@@ -40,6 +42,7 @@ export function buildProgram(): Command {
   program.addHelpText(
     'after',
     '\nQuick start:\n' +
+      '  datavessel init --api-key <key>  Sign in headlessly and self-configure\n' +
       '  datavessel login                 Authenticate (paste a token)\n' +
       '  datavessel tools list            Browse available tools\n' +
       '  datavessel tools show <tool>     See a tool\'s parameters\n' +

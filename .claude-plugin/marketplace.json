@@ -9,7 +9,7 @@
     {
       "name": "datavessel",
       "source": "./",
-      "description": "Discover and run 200+ analytics & commerce tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware) via the datavessel CLI, with safe defaults for write operations.",
+      "description": "Discover and run 200+ analytics & commerce tools (GA4, Search Console, Google/Meta Ads, Shopify, WooCommerce, Shopware) via the datavessel CLI — with an agent hierarchy: autonomous read agents, a human-in-the-loop write agent, and a verifier, plus /datavessel:setup for one-command onboarding.",
       "license": "Apache-2.0",
       "homepage": "https://datavessel.io",
       "keywords": ["analytics", "ecommerce", "ga4", "search-console", "shopify", "woocommerce", "shopware"]

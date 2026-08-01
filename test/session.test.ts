@@ -1,6 +1,9 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { needsRefresh, refreshOAuth } from '../src/session.js';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { needsRefresh, refreshOAuth, refreshOAuthLocked } from '../src/session.js';
 import type { OAuthCredential } from '../src/config.js';
 
 const base: OAuthCredential = {
@@ -62,6 +65,49 @@ test('refreshOAuth throws an auth error on failure', async () => {
   globalThis.fetch = (async () =>
     new Response('{"error":"invalid"}', { status: 400 })) as typeof fetch;
   await assert.rejects(refreshOAuth(base), /expired and could not be refreshed/);
+});
+
+test('refreshOAuthLocked adopts a sibling refresh without a network call', async () => {
+  let fetchCalls = 0;
+  globalThis.fetch = (async () => {
+    fetchCalls++;
+    return new Response('{}', { status: 500 });
+  }) as typeof fetch;
+
+  // Another process already rotated the stored session.
+  const fresh: OAuthCredential = {
+    ...base,
+    accessToken: 'sibling-access',
+    refreshToken: 'sibling-refresh',
+    expiresAt: Math.floor(Date.now() / 1000) + 3600,
+  };
+  const persisted: OAuthCredential[] = [];
+  const next = await refreshOAuthLocked(base, {
+    lockDir: join(mkdtempSync(join(tmpdir(), 'dv-session-')), 'refresh.lock'),
+    reload: () => fresh,
+    persist: (c) => persisted.push(c),
+  });
+  assert.equal(next.accessToken, 'sibling-access');
+  assert.equal(fetchCalls, 0, 'no refresh request made');
+  assert.equal(persisted.length, 0, 'nothing re-persisted');
+});
+
+test('refreshOAuthLocked refreshes and persists when the stored token is stale', async () => {
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({ access_token: 'new-access', refresh_token: 'new-refresh', expires_at: 9999999999 }),
+      { status: 200 },
+    )) as typeof fetch;
+
+  const persisted: OAuthCredential[] = [];
+  const next = await refreshOAuthLocked(base, {
+    lockDir: join(mkdtempSync(join(tmpdir(), 'dv-session-')), 'refresh.lock'),
+    reload: () => undefined, // nothing newer on disk
+    persist: (c) => persisted.push(c),
+  });
+  assert.equal(next.accessToken, 'new-access');
+  assert.equal(persisted.length, 1, 'rotation persisted under the lock');
+  assert.equal(persisted[0].refreshToken, 'new-refresh');
 });
 
 test('refreshOAuth keeps the old refresh token when none is returned', async () => {
