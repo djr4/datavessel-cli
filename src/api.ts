@@ -7,8 +7,8 @@
  */
 
 import { CliError, ExitCode, mapBackendError, type BackendError } from './errors.js';
-import type { Credential } from './config.js';
-import { needsRefresh, refreshOAuth } from './session.js';
+import type { Credential, OAuthCredential } from './config.js';
+import { needsRefresh, refreshOAuth, refreshOAuthLocked } from './session.js';
 import { USER_AGENT } from './version.js';
 
 export interface ToolSchema {
@@ -27,6 +27,12 @@ export interface ClientOptions {
   timeoutMs?: number;
   /** Called when an OAuth credential is refreshed, so callers can persist it. */
   onRefresh?: (credential: Credential) => void;
+  /**
+   * Cross-process refresh coordination for on-disk credentials: `lockDir`
+   * serializes refreshes across dv processes and `reload` re-reads the stored
+   * credential once the lock is held (a sibling may have refreshed already).
+   */
+  refreshLock?: { lockDir: string; reload: () => Credential | undefined };
 }
 
 export class ApiClient {
@@ -34,25 +40,50 @@ export class ApiClient {
   private credential?: Credential;
   private readonly timeoutMs: number;
   private readonly onRefresh?: (credential: Credential) => void;
+  private readonly refreshLock?: ClientOptions['refreshLock'];
+  private refreshing?: Promise<OAuthCredential>;
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
     this.credential = opts.credential;
     this.timeoutMs = opts.timeoutMs ?? 60_000;
     this.onRefresh = opts.onRefresh;
+    this.refreshLock = opts.refreshLock;
+  }
+
+  /** Refresh once, persisting the rotation; serialized across processes. */
+  private doRefresh(cred: OAuthCredential): Promise<OAuthCredential> {
+    if (this.refreshLock) {
+      const { lockDir, reload } = this.refreshLock;
+      return refreshOAuthLocked(cred, {
+        lockDir,
+        reload: () => {
+          const stored = reload();
+          return stored?.type === 'oauth' ? stored : undefined;
+        },
+        persist: (c) => this.onRefresh?.(c),
+      });
+    }
+    return refreshOAuth(cred).then((next) => {
+      this.onRefresh?.(next);
+      return next;
+    });
   }
 
   /**
    * Build auth headers, transparently refreshing an expired OAuth access token
-   * first and persisting the rotated credential via `onRefresh`.
+   * first and persisting the rotated credential via `onRefresh`. Concurrent
+   * requests within this process share one in-flight refresh.
    */
   private async authHeaders(): Promise<Record<string, string>> {
     let cred = this.credential;
     if (!cred) return {};
     if (cred.type === 'oauth' && needsRefresh(cred)) {
-      cred = await refreshOAuth(cred);
+      this.refreshing ??= this.doRefresh(cred).finally(() => {
+        this.refreshing = undefined;
+      });
+      cred = await this.refreshing;
       this.credential = cred;
-      this.onRefresh?.(cred);
     }
     if (cred.type === 'api-key') return { 'X-API-Key': cred.token };
     if (cred.type === 'oauth') return { Authorization: `Bearer ${cred.accessToken}` };

@@ -5,7 +5,14 @@
 
 import { Command } from 'commander';
 import { ApiClient } from './api.js';
-import { resolveConfig, saveCredential, type Credential, type ResolvedConfig } from './config.js';
+import {
+  _paths,
+  getStoredCredential,
+  resolveConfig,
+  saveCredential,
+  type Credential,
+  type ResolvedConfig,
+} from './config.js';
 
 export interface GlobalOptions {
   profile?: string;
@@ -48,12 +55,17 @@ export function buildContext(cmd: Command): Context {
   config.credential = credential;
 
   // Persist rotated OAuth tokens only when the credential came from disk (not
-  // from an ephemeral --token / env override).
-  const onRefresh =
-    fromStore && credential?.type === 'oauth'
-      ? (c: Credential) => saveCredential(config.profile, c)
-      : undefined;
+  // from an ephemeral --token / env override). Disk-backed sessions also get
+  // the cross-process refresh lock so parallel dv invocations (agent fan-out)
+  // can't stampede the rotating refresh token.
+  const diskOAuth = fromStore && credential?.type === 'oauth';
+  const onRefresh = diskOAuth
+    ? (c: Credential) => saveCredential(config.profile, c)
+    : undefined;
+  const refreshLock = diskOAuth
+    ? { lockDir: _paths.refreshLockDir(), reload: () => getStoredCredential(config.profile) }
+    : undefined;
 
-  const client = new ApiClient({ baseUrl: config.baseUrl, credential, onRefresh });
+  const client = new ApiClient({ baseUrl: config.baseUrl, credential, onRefresh, refreshLock });
   return { global, config, client };
 }
