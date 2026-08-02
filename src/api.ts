@@ -35,6 +35,19 @@ export interface ClientOptions {
   refreshLock?: { lockDir: string; reload: () => Credential | undefined };
 }
 
+/**
+ * Request timeout for a tool execution. Long-poll tools (e.g.
+ * datavessel_get_run_output) take a `wait_seconds` parameter that holds the
+ * request open server-side; the client must outlast it or the poll dies with
+ * a spurious timeout. The declared wait rides on top of the normal request
+ * budget, clamped to 10 minutes so a typo can't hang the CLI indefinitely.
+ */
+export function executeTimeoutMs(defaultMs: number, params: Record<string, unknown>): number {
+  const wait = Number(params.wait_seconds);
+  if (!Number.isFinite(wait) || wait <= 0) return defaultMs;
+  return defaultMs + Math.min(wait, 600) * 1000;
+}
+
 export class ApiClient {
   readonly baseUrl: string;
   private credential?: Credential;
@@ -103,14 +116,15 @@ export class ApiClient {
   private async request<T>(
     method: 'GET' | 'POST',
     path: string,
-    opts: { body?: unknown; auth?: boolean } = {},
+    opts: { body?: unknown; auth?: boolean; timeoutMs?: number } = {},
   ): Promise<T> {
     if (opts.auth) this.requireAuth();
     const authHeaders = opts.auth ? await this.authHeaders() : {};
 
+    const timeoutMs = opts.timeoutMs ?? this.timeoutMs;
     const url = `${this.baseUrl}${path}`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     let res: Response;
     try {
@@ -128,7 +142,7 @@ export class ApiClient {
       });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        throw new CliError(`Request timed out after ${this.timeoutMs}ms: ${method} ${path}`);
+        throw new CliError(`Request timed out after ${timeoutMs}ms: ${method} ${path}`);
       }
       const reason = err instanceof Error ? err.message : String(err);
       throw new CliError(
@@ -173,6 +187,7 @@ export class ApiClient {
     const res = await this.request<{ data: unknown }>('POST', '/v1/providers/execute', {
       body: { tool_name: toolName, params },
       auth: true,
+      timeoutMs: executeTimeoutMs(this.timeoutMs, params),
     });
     return res.data;
   }
