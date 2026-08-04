@@ -102,6 +102,12 @@ This repo is also an installable **Claude Code plugin**. It carries:
   [`builder-team`](./skills/builder-team/SKILL.md): each runs the matching
   server-side team end to end (brief the lead, dispatch, wait, surface write
   approvals, present the one report);
+- [`aeo-audit`](./skills/aeo-audit/SKILL.md) — a merchant-facing AEO audit
+  from the terminal: interviews you (shop domain, focus, competitors),
+  derives the buying questions shoppers ask ChatGPT/Claude, runs real
+  visibility checks, scoreboards you vs. rivals per answer, and proposes
+  product-content fixes behind your sign-off — then remembers the setup so
+  next time it's one line;
 - an **agent hierarchy** in [`agents/`](./agents) — `dv-analytics` and
   `dv-commerce-reader` run reads autonomously (and in parallel),
   `dv-commerce-ops` executes store changes only with per-change human
