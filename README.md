@@ -108,6 +108,12 @@ This repo is also an installable **Claude Code plugin**. It carries:
   visibility checks, scoreboards you vs. rivals per answer, and proposes
   product-content fixes behind your sign-off — then remembers the setup so
   next time it's one line;
+- [`topical-authority`](./skills/topical-authority/SKILL.md) — turns
+  scattered posts into pillar-and-cluster topic wheels: audits real Search
+  Console demand, proposes a topical map (with an explicit do-not-chase
+  list) behind your approval, then writes, publishes, interlinks, and
+  verifies the content via your connected WordPress or Shopware CMS — and
+  baselines positions so monthly re-runs surface only deltas;
 - an **agent hierarchy** in [`agents/`](./agents) — `dv-analytics` and
   `dv-commerce-reader` run reads autonomously (and in parallel),
   `dv-commerce-ops` executes store changes only with per-change human
