@@ -11,6 +11,11 @@ The canonical skill files now live under [`skills/`](./skills):
   the Ecommerce Marketing Team.
 - [`skills/builder-team/SKILL.md`](./skills/builder-team/SKILL.md) — run the
   Store Expansion Builder.
+- [`skills/aeo-audit/SKILL.md`](./skills/aeo-audit/SKILL.md) — merchant AEO
+  audit from the terminal.
+- [`skills/topical-authority/SKILL.md`](./skills/topical-authority/SKILL.md) —
+  audit Search Console, build a pillar-and-cluster topical map, publish and
+  verify it.
 
 For Cursor (or manual setup), copy `skills/datavessel/SKILL.md` into your
 rules; add the team skills if you use teams.
