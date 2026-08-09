@@ -1,0 +1,12 @@
+{
+  "name": "ai-visibility",
+  "description": "Check whether AI assistants recommend your store when a shopper asks what to buy — scored against named competitors, with a named cause per loss and a drafted fix list. No account, API key, or connected data source required.",
+  "version": "0.1.0",
+  "author": {
+    "name": "datavessel",
+    "url": "https://datavessel.io"
+  },
+  "homepage": "https://datavessel.io",
+  "repository": "https://github.com/djr4/datavessel-cli",
+  "license": "Apache-2.0"
+}

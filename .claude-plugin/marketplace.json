@@ -13,6 +13,14 @@
       "license": "Apache-2.0",
       "homepage": "https://datavessel.io",
       "keywords": ["analytics", "ecommerce", "ga4", "search-console", "shopify", "woocommerce", "shopware"]
+    },
+    {
+      "name": "ai-visibility",
+      "source": "./plugins/ai-visibility",
+      "description": "Check whether AI assistants recommend your store when a shopper asks what to buy — scored against named competitors, with a named cause per loss and a drafted fix list. Needs no account, API key, or connected data source.",
+      "license": "Apache-2.0",
+      "homepage": "https://datavessel.io",
+      "keywords": ["aeo", "geo", "ai-visibility", "seo", "ecommerce", "answer-engine-optimization"]
     }
   ]
 }

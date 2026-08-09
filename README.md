@@ -135,6 +135,26 @@ For Cursor (or manual setup), reference
 copy it into `.claude/skills/datavessel/SKILL.md` (add the team skills the
 same way if you use teams).
 
+### `ai-visibility` — free, no account needed
+
+The same marketplace also serves
+[**`ai-visibility`**](./plugins/ai-visibility) — a standalone skill that
+checks whether AI assistants recommend a store when a shopper asks what to
+buy, scores it against named competitors, traces every losing question to a
+specific cause, and drafts the fixes.
+
+```
+/plugin marketplace add djr4/datavessel-cli
+/plugin install ai-visibility@datavessel
+/ai-visibility:check acme-ceramics.de
+```
+
+It needs **no datavessel account, API key, or connected source** — it runs on
+web search in the session and is complete on its own. The
+[`aeo-audit`](./skills/aeo-audit/SKILL.md) skill above is the connected
+version: several assistants, repeat runs for variance, tracked over time,
+with fixes written back to the store.
+
 ## Commands
 
 | Command | Description |
