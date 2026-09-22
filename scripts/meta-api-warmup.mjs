@@ -12,11 +12,11 @@
  * account, paced so it stays inside Meta's limits. The binding one on the
  * development tier is the app-level throttle: roughly 200 calls per rolling
  * hour per user ("Application request limit reached" once exceeded). The
- * default 30 s spacing keeps a run at ~120/hour, so 150 calls per run and
- * four runs on separate hours or days clears the 500-call threshold.
+ * default 2 min spacing (~30/hour) ran 140+ calls without a throttle; faster
+ * cadences got throttled within the first hour. 500 calls takes ~17 hours.
  *
  * Usage (needs DATAVESSEL_API_KEY or a logged-in CLI profile):
- *   node scripts/meta-api-warmup.mjs [--calls 150] [--interval-ms 30000]
+ *   node scripts/meta-api-warmup.mjs [--calls 150] [--interval-ms 120000]
  *                                     [--ad-account-id act_123]
  */
 import { spawnSync } from 'node:child_process';
@@ -31,7 +31,7 @@ function arg(name, fallback) {
 }
 
 const TOTAL = Number(arg('--calls', '150'));
-const INTERVAL_MS = Number(arg('--interval-ms', '30000'));
+const INTERVAL_MS = Number(arg('--interval-ms', '120000'));
 let adAccountId = arg('--ad-account-id', '');
 
 function run(tool, params = {}) {
@@ -55,6 +55,8 @@ function run(tool, params = {}) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Discover an ad account plus one campaign / ad set / ad to hang reads off.
+// Paced like the main loop: a burst of back-to-back calls at run start is
+// what trips Meta's throttle, even when the steady cadence never does.
 if (!adAccountId) {
   const r = run('meta_get_user_ad_accounts');
   if (!r.ok || !r.data.adAccounts?.length) {
@@ -62,10 +64,14 @@ if (!adAccountId) {
     process.exit(1);
   }
   adAccountId = r.data.adAccounts[0].id;
+  await sleep(INTERVAL_MS);
 }
 const campaign = run('meta_list_campaigns', { 'ad-account-id': adAccountId, limit: 1 }).data?.campaigns?.[0];
+await sleep(INTERVAL_MS);
 const adSet = run('meta_list_ad_sets', { 'ad-account-id': adAccountId, limit: 1 }).data?.adSets?.[0];
+await sleep(INTERVAL_MS);
 const ad = run('meta_list_ads', { 'ad-account-id': adAccountId, limit: 1 }).data?.ads?.[0];
+await sleep(INTERVAL_MS);
 
 // Insights endpoints have their own (larger) rate budget, so most of the
 // rotation goes there; management reads are kept to ~40% of the mix.
