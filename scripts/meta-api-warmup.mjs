@@ -9,12 +9,14 @@
  * on the app (everyone else gets Graph error 270).
  *
  * This script rotates through the read-only meta_* tools against one ad
- * account, paced so it stays inside Meta's development-tier rate limits
- * (per ad account, per rolling hour: ~300 ads-management calls and ~600
- * ads-insights calls when the account has no active ads).
+ * account, paced so it stays inside Meta's limits. The binding one on the
+ * development tier is the app-level throttle: roughly 200 calls per rolling
+ * hour per user ("Application request limit reached" once exceeded). The
+ * default 30 s spacing keeps a run at ~120/hour, so 150 calls per run and
+ * four runs on separate hours or days clears the 500-call threshold.
  *
  * Usage (needs DATAVESSEL_API_KEY or a logged-in CLI profile):
- *   node scripts/meta-api-warmup.mjs [--calls 250] [--interval-ms 10000]
+ *   node scripts/meta-api-warmup.mjs [--calls 150] [--interval-ms 30000]
  *                                     [--ad-account-id act_123]
  */
 import { spawnSync } from 'node:child_process';
@@ -28,8 +30,8 @@ function arg(name, fallback) {
   return i >= 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : fallback;
 }
 
-const TOTAL = Number(arg('--calls', '250'));
-const INTERVAL_MS = Number(arg('--interval-ms', '10000'));
+const TOTAL = Number(arg('--calls', '150'));
+const INTERVAL_MS = Number(arg('--interval-ms', '30000'));
 let adAccountId = arg('--ad-account-id', '');
 
 function run(tool, params = {}) {
