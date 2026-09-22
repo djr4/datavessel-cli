@@ -89,27 +89,49 @@ const rotation = [
 
 console.log(`Warm-up: ${TOTAL} calls against ${adAccountId}, one every ${INTERVAL_MS} ms (~${Math.round((3600000 / INTERVAL_MS) * 10) / 10}/hour)`);
 
+// Meta's throttle messages: "Application request limit reached" (#4),
+// "User request limit reached" (#17), "(#613) Calls to this api have
+// exceeded the rate limit" and "(#80004) too many calls".
+const isThrottle = (text) => /request limit reached|rate limit|too many calls|#613|#80004/i.test(text);
+
 let ok = 0;
 let failed = 0;
+let throttled = 0;
 let consecutiveFailures = 0;
+let backoffMs = 5 * 60_000;
 const started = Date.now();
 for (let i = 0; i < TOTAL; i++) {
   const [tool, params] = rotation[i % rotation.length];
   const r = run(tool, params);
+  const errText = r.stderr || JSON.stringify(r.data);
   if (r.ok) {
     ok++;
     consecutiveFailures = 0;
+    backoffMs = 5 * 60_000;
+  } else if (isThrottle(errText)) {
+    // Each throttled call still counts as an error on Meta's side; wait for
+    // the window to clear instead of stacking more of them.
+    failed++;
+    throttled++;
+    console.error(`  ✗ ${tool}: ${errText}`);
+    if (throttled >= 4) {
+      console.error('Throttled 4 times this run — stopping; try again in an hour.');
+      process.exit(2);
+    }
+    console.log(`  throttled — backing off ${backoffMs / 60000} min`);
+    await sleep(backoffMs);
+    backoffMs = Math.min(backoffMs * 2, 20 * 60_000);
   } else {
     failed++;
     consecutiveFailures++;
-    console.error(`  ✗ ${tool}: ${r.stderr || JSON.stringify(r.data)}`);
+    console.error(`  ✗ ${tool}: ${errText}`);
   }
   if ((i + 1) % 10 === 0 || i === TOTAL - 1) {
     const mins = Math.round((Date.now() - started) / 60000);
     console.log(`  ${i + 1}/${TOTAL} — ok ${ok}, failed ${failed} (${mins} min)`);
   }
   // Errors count against Meta's error-rate threshold; stop rather than
-  // pile them up (rate limit, expired token, ...).
+  // pile them up (expired token, backend down, ...).
   if (consecutiveFailures >= 5) {
     console.error('5 consecutive failures — stopping.');
     process.exit(2);
