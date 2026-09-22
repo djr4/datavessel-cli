@@ -98,6 +98,7 @@ let ok = 0;
 let failed = 0;
 let throttled = 0;
 let consecutiveFailures = 0;
+let intervalMs = INTERVAL_MS;
 let backoffMs = 5 * 60_000;
 const started = Date.now();
 for (let i = 0; i < TOTAL; i++) {
@@ -107,18 +108,19 @@ for (let i = 0; i < TOTAL; i++) {
   if (r.ok) {
     ok++;
     consecutiveFailures = 0;
-    backoffMs = 5 * 60_000;
   } else if (isThrottle(errText)) {
-    // Each throttled call still counts as an error on Meta's side; wait for
-    // the window to clear instead of stacking more of them.
+    // Each throttled call still counts as an error on Meta's side: wait for
+    // the window to clear and slow the cadence down for the rest of the run
+    // instead of stacking more of them.
     failed++;
     throttled++;
     console.error(`  ✗ ${tool}: ${errText}`);
-    if (throttled >= 4) {
-      console.error('Throttled 4 times this run — stopping; try again in an hour.');
+    if (throttled >= 8) {
+      console.error('Throttled 8 times this run — stopping; try again in an hour.');
       process.exit(2);
     }
-    console.log(`  throttled — backing off ${backoffMs / 60000} min`);
+    intervalMs = Math.min(intervalMs * 2, 5 * 60_000);
+    console.log(`  throttled — backing off ${backoffMs / 60000} min, then one call every ${intervalMs / 1000} s`);
     await sleep(backoffMs);
     backoffMs = Math.min(backoffMs * 2, 20 * 60_000);
   } else {
@@ -136,7 +138,7 @@ for (let i = 0; i < TOTAL; i++) {
     console.error('5 consecutive failures — stopping.');
     process.exit(2);
   }
-  if (i < TOTAL - 1) await sleep(INTERVAL_MS);
+  if (i < TOTAL - 1) await sleep(intervalMs);
 }
 console.log(`Done: ${ok} successful, ${failed} failed.`);
 process.exit(failed > ok ? 1 : 0);
