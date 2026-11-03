@@ -63,18 +63,22 @@ export function mapBackendError(
         'Reconnect your account in the web app: https://app.datavessel.io/settings',
       );
     case 'rate_limit_exceeded': {
+      // Plans count writes: a successful tool call that changes a connected
+      // shop, feed, ads, analytics or tag resource. Reads are never limited.
       const d = err?.details ?? {};
       const current = d.current ?? '?';
       const limit = d.limit ?? '?';
       const tier = d.tier ?? 'your current plan';
-      const end = d.billingPeriodEnd ? String(d.billingPeriodEnd) : '';
-      const lines = [
-        `API quota exceeded: ${current}/${limit} calls used this month on ${tier}.`,
-        'To continue you can:',
-        '  1. Upgrade your plan at https://app.datavessel.io/settings',
-        '  2. Contact sales at contact@datavessel.io for enterprise options',
-      ];
-      if (end) lines.push(`  3. Wait until your quota resets on ${end}`);
+      const resets = d.resetsAt ? String(d.resetsAt).slice(0, 10) : '';
+      const upgrade = d.upgradeUrl ? String(d.upgradeUrl) : 'https://app.datavessel.io/settings?section=plan';
+      const lines =
+        d.kind === 'writes'
+          ? [
+              `Write allowance reached: ${current} of ${limit} writes used this period on the ${tier} plan.`,
+              'Reads keep working; this write did not run.',
+              `Writes resume ${resets ? `on ${resets}` : 'at the next period'} or on a bigger plan: ${upgrade}`,
+            ]
+          : [`Plan limit reached on the ${tier} plan (${current}/${limit}).`, `Pick a plan at ${upgrade}`];
       return new CliError(lines.join('\n'), ExitCode.QUOTA);
     }
     case 'unauthorized':
@@ -95,9 +99,9 @@ export function mapBackendError(
   }
   if (status === 429) {
     return new CliError(
-      'API quota exceeded.',
+      'A plan limit was reached. Reads are never limited; writes resume at the next period or on a bigger plan.',
       ExitCode.QUOTA,
-      'Upgrade your plan at https://app.datavessel.io/settings',
+      'Pick a plan at https://app.datavessel.io/settings?section=plan',
     );
   }
 

@@ -9,17 +9,19 @@ test('maps oauth_token_not_found to NOT_CONNECTED with hint', () => {
   assert.match(e.hint ?? '', /web app/);
 });
 
-test('maps rate_limit_exceeded to QUOTA with usage detail', () => {
+test('maps rate_limit_exceeded (writes) to QUOTA with the facts the agent needs', () => {
   const e = mapBackendError(429, {
     error: {
       code: 'rate_limit_exceeded',
       message: 'too many',
-      details: { current: 100, limit: 100, tier: 'free', billingPeriodEnd: '2026-07-01' },
+      details: { kind: 'writes', current: 50, limit: 50, tier: 'free', resetsAt: '2026-12-01T00:00:00.000Z', upgradeUrl: 'https://app.datavessel.io/settings?section=plan' },
     },
   });
   assert.equal(e.exitCode, ExitCode.QUOTA);
-  assert.match(e.message, /100\/100/);
-  assert.match(e.message, /2026-07-01/);
+  assert.match(e.message, /50 of 50 writes/);
+  assert.match(e.message, /Reads keep working/);
+  assert.match(e.message, /2026-12-01/);
+  assert.match(e.message, /settings\?section=plan/);
 });
 
 test('maps unauthorized and bare 401 to AUTH', () => {

@@ -4,7 +4,7 @@
  * Point of the command: "add a key and it starts working". It optionally
  * stores a supplied credential (so it doubles as a headless login), verifies
  * it against the backend, force-syncs the tool catalog, and reports connected
- * providers and quota — everything an agent or a human needs before the first
+ * providers and the write allowance — everything an agent or a human needs before the first
  * real call, in one invocation with one machine-readable output.
  */
 
@@ -52,7 +52,7 @@ export function registerInitCommand(program: Command): void {
       try {
         usage = await ctx.client.usage();
       } catch {
-        usage = undefined; // non-fatal: quota display is a nicety, not a gate
+        usage = undefined; // non-fatal: the allowance display is a nicety, not a gate
       }
 
       const readCount = tools.filter((t) => t.access === 'read').length;
@@ -81,7 +81,7 @@ export function registerInitCommand(program: Command): void {
       }
       if (usage) {
         info(
-          `  Tier: ${usage.tier_name ?? usage.tier} — ${usage.remaining_tool_calls} tool calls remaining`,
+          `  Plan: ${usage.tier_name ?? usage.tier} — ${usage.writes_remaining} of ${usage.writes_limit} writes left this period (reads are unlimited)`,
         );
       }
       info('');
