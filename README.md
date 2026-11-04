@@ -141,12 +141,12 @@ same way if you use teams).
 | --- | --- |
 | `login` / `logout` / `whoami` | Manage and inspect authentication |
 | `setup` | Interactive wizard: sign in, see exactly which sources to connect (with the URL), answer a few questions (GA4 property, Search Console site, store, Slack channel) — saved to team memory so agents and teams start with zero config |
-| `init` | Sign in (optionally `--api-key`/`--token`), sync the catalog, and report providers, tier, and quota in one shot |
+| `init` | Sign in (optionally `--api-key`/`--token`), sync the catalog, and report providers, tier, and write allowance in one shot |
 | `tools list` | List tools (filter with `--provider`, `--access`, `--search`) |
 | `tools show <tool>` | Show a tool's description and parameters |
 | `run <tool> [--flags…]` | Execute a tool; flags come from its schema |
 | `providers` | List providers you've connected |
-| `usage` | Show tier, tool-call quota, billing period |
+| `usage` | Show tier, writes used and remaining, billing period |
 | `sync` | Force-refresh the local tool catalog cache |
 | `config show/get/set` | Manage base URL and default profile |
 
@@ -196,7 +196,7 @@ npm run build           # emit dist/
 
 ### Exit codes
 
-`0` ok · `1` error · `2` usage · `3` auth · `4` quota · `5` provider not connected.
+`0` ok · `1` error · `2` usage · `3` auth · `4` write allowance reached · `5` provider not connected.
 
 ## License
 

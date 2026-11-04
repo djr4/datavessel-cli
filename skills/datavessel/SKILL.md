@@ -128,8 +128,9 @@ Rules for fanning out:
    only across the independent fan-out (e.g. one subagent per site).
 3. **Never parallelize writes.** Write tools (`access: write`) need explicit
    per-change approval and must run deliberately, one at a time — not fanned out.
-4. **Mind the shared quota.** Parallel calls draw down the same tool-call quota
-   faster. If any subagent hits exit code 4, stop fanning out and surface it.
+4. **Mind the shared write allowance.** Reads are unlimited; write tools draw
+   down the account's monthly write allowance. If any subagent hits exit code 4,
+   stop fanning out and surface it.
 5. **Each subagent uses `--json` and returns only what's needed** — a number, a
    short table, a verdict. Don't pass raw catalog or tool output back up.
 
@@ -188,8 +189,8 @@ datavessel --json run create_refund --order-id 1042 --yes \
 - `datavessel providers` lists which sources the user has connected. If a tool
   fails with exit code 5 (`not connected`), tell the user to connect that
   provider at https://app.datavessel.io/settings — you can't connect it for them.
-- `datavessel usage` shows tier and remaining tool-call quota (exit code 4 =
-  quota exceeded).
+- `datavessel usage` shows tier, writes used and remaining this period (exit
+  code 4 = write allowance reached; reads keep working).
 - Override targets with `--profile <name>`, `DATAVESSEL_API_URL`,
   `DATAVESSEL_APP_URL`.
 
@@ -200,7 +201,7 @@ datavessel --json run create_refund --order-id 1042 --yes \
 | 0 | success | continue |
 | 2 | usage error (bad/missing flag) | fix flags; run `tools show <tool>` |
 | 3 | not authenticated | ask user to run `datavessel login` |
-| 4 | quota exceeded | stop; tell user to upgrade/wait |
+| 4 | write allowance reached | stop writing; tell user to upgrade or wait for the reset |
 | 5 | provider not connected | ask user to connect the source |
 | 127 | `datavessel` not found | install it: `npm i -g datavessel-cli` (see Install) |
 | 1 | other error | read stderr; surface to user |

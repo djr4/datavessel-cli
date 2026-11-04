@@ -1,5 +1,5 @@
 /**
- * Account commands: `providers` (connected sources) and `usage` (tier/quota).
+ * Account commands: `providers` (connected sources) and `usage` (plan and writes this period).
  */
 
 import { Command } from 'commander';
@@ -27,7 +27,7 @@ export function registerAccountCommands(program: Command): void {
 
   program
     .command('usage')
-    .description('Show your tier, tool-call quota, and billing period')
+    .description('Show your plan, writes used this period, and billing period')
     .action(async (_opts, cmd: Command) => {
       const ctx = buildContext(cmd);
       const u = await ctx.client.usage();
@@ -37,10 +37,10 @@ export function registerAccountCommands(program: Command): void {
       }
       const rows: string[][] = [
         ['Tier', `${u.tier_name ?? u.tier} (${u.tier})`],
-        ['Tool calls', `${u.current_tool_calls} / ${u.tool_call_limit} (${u.usage_percentage}%)`],
-        ['Remaining', String(u.remaining_tool_calls)],
-        ['Schedules', `${u.schedules_current} / ${u.schedules_limit}`],
-        ['Daily agent runs', `${u.daily_agent_runs_current} / ${u.daily_agent_runs_limit}`],
+        ['Writes this period', `${u.writes_current} / ${u.writes_limit} (${u.usage_percentage}%)`],
+        ['Writes remaining', String(u.writes_remaining)],
+        ['Reads', 'unlimited'],
+        ['Scheduled agents', `${u.schedules_current} active`],
         ['Billing period ends', String(u.billing_period_end ?? '')],
         ['Subscription', String(u.subscription_status ?? '')],
       ];
