@@ -40,7 +40,7 @@ export function registerAccountCommands(program: Command): void {
         ['Writes this period', `${u.writes_current} / ${u.writes_limit} (${u.usage_percentage}%)`],
         ['Writes remaining', String(u.writes_remaining)],
         ['Reads', 'unlimited'],
-        ['Scheduled agents', u.schedules_limit === 0 ? 'not on Free' : `${u.schedules_current} active`],
+        ['Scheduled agents', `${u.schedules_current} active`],
         ['Billing period ends', String(u.billing_period_end ?? '')],
         ['Subscription', String(u.subscription_status ?? '')],
       ];
