@@ -74,9 +74,9 @@ export function mapBackendError(
       const lines =
         d.kind === 'writes'
           ? [
-              `Write allowance reached: ${current} of ${limit} writes used this period on the ${tier} plan.`,
+              `Write allowance reached: ${current} of ${limit} writes used this period on the ${tier} plan, no pack writes left.`,
               'Reads keep working; this write did not run.',
-              `Writes resume ${resets ? `on ${resets}` : 'at the next period'} or on a bigger plan: ${upgrade}`,
+              `Writes resume ${resets ? `on ${resets}` : 'at the next period'}, with a write pack, or on a bigger plan: ${upgrade}`,
             ]
           : [`Plan limit reached on the ${tier} plan (${current}/${limit}).`, `Pick a plan at ${upgrade}`];
       return new CliError(lines.join('\n'), ExitCode.QUOTA);

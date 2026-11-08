@@ -39,6 +39,7 @@ export function registerAccountCommands(program: Command): void {
         ['Tier', `${u.tier_name ?? u.tier} (${u.tier})`],
         ['Writes this period', `${u.writes_current} / ${u.writes_limit} (${u.usage_percentage}%)`],
         ['Writes remaining', String(u.writes_remaining)],
+        ...(Number(u.write_credits ?? 0) > 0 ? [['Pack writes', String(u.write_credits)]] : []),
         ['Reads', 'unlimited'],
         ['Scheduled agents', `${u.schedules_current} active`],
         ['Billing period ends', String(u.billing_period_end ?? '')],
