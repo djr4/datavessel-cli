@@ -9,6 +9,18 @@ test('maps oauth_token_not_found to NOT_CONNECTED with hint', () => {
   assert.match(e.hint ?? '', /web app/);
 });
 
+test('an expired provider connection is not a login problem', () => {
+  // The backend answers 401 for it; the CLI must not send the user to `datavessel login`.
+  const e = mapBackendError(401, { error: { code: 'oauth_token_expired', message: 'Meta access token has expired. Please reconnect your Meta account.' } });
+  assert.equal(e.exitCode, ExitCode.NOT_CONNECTED);
+  assert.match(e.message, /Meta access token has expired/);
+  assert.match(e.hint ?? '', /Reconnect/);
+  assert.doesNotMatch(`${e.message} ${e.hint}`, /datavessel login/);
+  // A 401 with no such code is still the CLI's own session.
+  assert.equal(mapBackendError(401, { error: { code: 'unauthorized', message: 'x' } }).exitCode, ExitCode.AUTH);
+  assert.equal(mapBackendError(401, undefined).exitCode, ExitCode.AUTH);
+});
+
 test('maps rate_limit_exceeded (writes) to QUOTA with the facts the agent needs', () => {
   const e = mapBackendError(429, {
     error: {
