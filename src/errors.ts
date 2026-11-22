@@ -56,6 +56,15 @@ export function mapBackendError(
         ExitCode.NOT_CONNECTED,
         'Connect your account in the web app first: https://app.datavessel.io/settings',
       );
+    // A connected account whose access has run out (Meta's lasts 60 days).
+    // The backend answers 401, but it is the connection that expired, not
+    // this CLI's session: logging in again would not help.
+    case 'oauth_token_expired':
+      return new CliError(
+        err?.message ?? 'The connection to this provider has expired.',
+        ExitCode.NOT_CONNECTED,
+        'Reconnect the account in the web app: https://app.datavessel.io',
+      );
     case 'oauth_token_refresh_failed':
       return new CliError(
         'Failed to refresh the OAuth token for this provider.',
